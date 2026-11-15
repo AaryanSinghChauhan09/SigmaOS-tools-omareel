@@ -1,0 +1,14 @@
+[package]
+name = "sigmaos-tools-omareel"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "sigmaos_tools_omareel"
+path = "src/lib.rs"
+
+[[bin]]
+name = "omareel"
+path = "src/main.rs"
+
+[dependencies]
