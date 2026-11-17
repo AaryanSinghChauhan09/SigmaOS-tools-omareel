@@ -3,7 +3,7 @@ name = "SigmaOS-tools-omareel"
 tier = 2
 stability = "scaffold"
 language = "rust"
-description = "tools-omareel component"
+description = "SigmaOS Tools omareel - Screen recording engine (omacom/omareel parity)"
 upstream = []
 
 [contract]
