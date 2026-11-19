@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 //! omareel - Screen recording engine for SigmaOS
 
 use std::path::PathBuf;
@@ -153,5 +154,49 @@ impl RecordingSession {
 
     pub fn frame_count(&self) -> usize {
         self.frames.len()
+    }
+}
+
+
+#[cfg(test)]
+mod oma_reel_tests {
+    use super::*;
+
+    #[test]
+    fn test_invalid_fps_error_aaa() {
+        // Arrange
+        let config = RecordingConfig::new("/tmp/test.mp4", VideoFormat::Mp4).unwrap();
+        // Act
+        let err_low = config.clone().with_fps(0);
+        let err_high = config.with_fps(241);
+        // Assert
+        assert!(err_low.is_err());
+        assert!(err_high.is_err());
+    }
+
+    #[test]
+    fn test_session_state_transitions_aaa() {
+        // Arrange
+        let config = RecordingConfig::new("/tmp/out.gif", VideoFormat::Gif).unwrap();
+        let mut session = RecordingSession::new(config);
+        assert_eq!(session.state, SessionState::Idle);
+        // Act
+        session.start().unwrap();
+        assert_eq!(session.state, SessionState::Recording);
+        session.pause().unwrap();
+        assert_eq!(session.state, SessionState::Paused);
+        session.resume().unwrap();
+        assert_eq!(session.state, SessionState::Recording);
+        let _ = session.stop().unwrap();
+        // Assert
+        assert_eq!(session.state, SessionState::Stopped);
+    }
+
+    #[test]
+    fn test_video_format_extensions_aaa() {
+        // Arrange & Act & Assert
+        assert_eq!(VideoFormat::Mp4.extension(), "mp4");
+        assert_eq!(VideoFormat::Gif.extension(), "gif");
+        assert_eq!(VideoFormat::Webm.extension(), "webm");
     }
 }
