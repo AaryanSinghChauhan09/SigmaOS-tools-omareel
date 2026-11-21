@@ -1,16 +1,16 @@
 [component]
 name = "SigmaOS-tools-omareel"
 tier = 2
-stability = "scaffold"
+stability = "beta"
 language = "rust"
 description = "SigmaOS Tools omareel - Screen recording engine (omacom/omareel parity)"
-upstream = []
+upstream = ["https://github.com/omacom/omareel"]
 
 [contract]
-provides = ["component"]
+provides = ["timeline-model", "zoom-keyframes", "ffmpeg-render-plan"]
 depends_on = []
 
 [maturity]
 status = "Implemented"
-test_evidence = "Compiles and passes AAA unit tests"
+test_evidence = "cargo test: 18 tests pass (timeline, zoom, camera, render)"
 next_milestone = "Hardware and runtime integration"

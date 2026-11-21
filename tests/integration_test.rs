@@ -1,56 +1,50 @@
-use sigmaos_tools_omareel::{
-    RecordingConfig, RecordingFrame, RecordingSession, RecordingStats, SessionState, VideoFormat,
-};
+//! Integration tests for sigmaos-tools-omareel.
 
-#[test]
-fn test_recording_config_creation_aaa() {
-    // Arrange + Act
-    let config = RecordingConfig::new("/tmp/test.mp4", VideoFormat::Mp4).unwrap();
-    // Assert
-    assert_eq!(config.fps, 30);
-    assert_eq!(config.width, 1920);
-    assert_eq!(config.format, VideoFormat::Mp4);
+use sigmaos_tools_omareel::*;
+
+fn tl() -> Timeline {
+    let mut t = Timeline::new();
+    t.add_clip(TrackKind::Screen, Clip::Video(VideoClip {
+        id: 1, source: "s.mp4".into(), start: 0.0, duration: 20.0,
+        in_point: 2.0, kind: ClipKind::Screen, volume: 1.0,
+    })).unwrap();
+    t
 }
 
 #[test]
-fn test_recording_session_lifecycle_aaa() {
-    // Arrange
-    let config = RecordingConfig::new("/tmp/test.mp4", VideoFormat::Mp4).unwrap();
-    let mut session = RecordingSession::new(config);
-    // Act
-    session.start().unwrap();
-    session
-        .add_frame(RecordingFrame {
-            sequence: 0,
-            timestamp_ms: 33,
-            compressed_size_bytes: 1024,
-        })
-        .unwrap();
-    session
-        .add_frame(RecordingFrame {
-            sequence: 1,
-            timestamp_ms: 66,
-            compressed_size_bytes: 1024,
-        })
-        .unwrap();
-    let stats = session.stop().unwrap();
-    // Assert
-    assert_eq!(stats.total_frames, 2);
-    assert_eq!(session.state, SessionState::Stopped);
+fn test_timeline_duration() {
+    assert_eq!(tl().duration(), 20.0);
 }
 
 #[test]
-fn test_stats_average_fps_aaa() {
-    // Arrange
-    let stats = RecordingStats {
-        total_frames: 60,
-        duration_ms: 2000,
-        output_path: std::path::PathBuf::from("/tmp/t.mp4"),
-        format: VideoFormat::Mp4,
-        total_bytes: 1_000_000,
-    };
-    // Act
-    let fps = stats.average_fps();
-    // Assert
-    assert!((fps - 30.0).abs() < 0.1);
+fn test_render_plan_basic() {
+    let plan = plan_render(&tl(), &RenderSettings::default(), "out.mp4").unwrap();
+    assert!(plan.filter_graph.contains("trim"));
+    assert!(plan.filter_graph.contains("amix") == false); // single audio
+}
+
+#[test]
+fn test_zoom_interpolation() {
+    let kfs = vec![
+        ZoomKeyframe { time: 0.0, region: ZoomRegion { cx: 0.5, cy: 0.5, zoom: 1.0 }, transition: 0.0 },
+        ZoomKeyframe { time: 10.0, region: ZoomRegion { cx: 0.3, cy: 0.4, zoom: 2.5 }, transition: 0.0 },
+    ];
+    let z = zoom_at(&kfs, 5.0);
+    assert!((z.zoom - 1.75).abs() < 0.01);
+}
+
+#[test]
+fn test_camera_bubble() {
+    let b = CameraBubble::default();
+    let (x, y) = b.origin(1920, 1080);
+    assert!(x > 1500 && y > 800);
+}
+
+#[test]
+fn test_cursor_activity() {
+    let mut c = SyntheticCursor::default();
+    c.mode = CursorMode::OnActivity;
+    c.move_to(0.5, 0.5, 1.0);
+    assert!(c.visible_at(1.2));
+    assert!(!c.visible_at(3.0));
 }
